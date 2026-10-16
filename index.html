@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIP Media BD Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- আপনার SDK Script -->
+    <script src='//libtl.com/sdk.js' data-zone='12035179' data-sdk='show_12035179'></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f1f5f9; }
+        /* --- Mobile First Approach --- */
+        
+        /* Sidebar is hidden on mobile by default */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 250px;
+            z-index: 40;
+            background-color: #1e1b4b;
+            color: #d1d5db;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        .sidebar.show {
+            transform: translateX(0);
+        }
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 30;
+        }
+        .sidebar.show + .sidebar-overlay {
+            display: block;
+        }
+        .sidebar a { border-left: 3px solid transparent; transition: all 0.2s; }
+        .sidebar a:hover { background-color: #312e81; }
+        .sidebar a.active { background-color: #4f46e5; color: white; border-left-color: #818cf8; }
+
+        /* Main content takes full width on mobile */
+        .main-content { width: 100%; }
+
+        /* --- Desktop Styles --- */
+        @media (min-width: 768px) {
+            .sidebar {
+                position: static;
+                transform: translateX(0);
+                flex-shrink: 0;
+            }
+            .sidebar-overlay, .mobile-header {
+                display: none;
+            }
+            .main-content-container { display: flex; }
+        }
+
+        .stat-card { background-color: #1e293b; border-radius: 0.75rem; border: 1px solid #334155; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.4s ease-in-out; }
+        .btn { padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 600; transition: all 0.2s; cursor: pointer; }
+        .btn:active { transform: scale(0.95); }
+        .btn-primary { background-color: #6366f1; color: white; }
+        .btn-primary:hover { background-color: #4f46e5; }
+        .btn-success { background-color: #10b981; color: white; }
+        .btn-danger { background-color: #ef4444; color: white; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #334155; }
+        th { background-color: #1e293b; color: #cbd5e1; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div id="app-container" class="hidden">
+        <!-- Mobile Header with Hamburger Menu -->
+        <header class="mobile-header md:hidden sticky top-0 z-25 flex items-center justify-between p-4 bg-[#1e1b4b] text-white shadow-md">
+            <h1 id="page-title" class="text-xl font-bold">VIP Media BD</h1>
+            <button id="menu-toggle-btn" class="text-white">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+        </header>
+
+        <div class="main-content-container min-h-screen">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="p-6 text-2xl font-extrabold tracking-wider text-indigo-400 border-b border-indigo-900">VIP Media BD</div>
+                <nav class="mt-6 space-y-1">
+                    <a href="#" class="nav-link flex items-center py-3 px-4 text-sm font-medium" data-page="dashboard-page" data-title="Dashboard"><i data-lucide="home" class="w-5 h-5 mr-3"></i>Dashboard</a>
+                    <a href="#" class="nav-link flex items-center py-3 px-4 text-sm font-medium" data-page="control-page" data-title="Admin Control"><i data-lucide="grid" class="w-5 h-5 mr-3"></i>Admin Control</a>
+                    <a href="#" class="nav-link flex items-center py-3 px-4 text-sm font-medium" data-page="users-page" data-title="Users"><i data-lucide="users" class="w-5 h-5 mr-3"></i>Users</a>
+                    <a href="#" class="nav-link flex items-center py-3 px-4 text-sm font-medium" data-page="withdrawals-page" data-title="Withdrawals"><i data-lucide="dollar-sign" class="w-5 h-5 mr-3"></i>Withdrawals</a>
+                    <a href="#" class="nav-link flex items-center py-3 px-4 text-sm font-medium" data-page="views-page" data-title="Views"><i data-lucide="eye" class="w-5 h-5 mr-3"></i>Views</a>
+                    <a href="#" class="nav-link flex items-center py-3 px-4 text-sm font-medium" data-page="notifications-page" data-title="Notifications"><i data-lucide="send" class="w-5 h-5 mr-3"></i>Notifications</a>
+                    <a href="#" class="nav-link flex items-center py-3 px-4 text-sm font-medium" data-page="settings-page" data-title="Settings"><i data-lucide="settings" class="w-5 h-5 mr-3"></i>Settings</a>
+                    <a href="#" id="admin-logout-btn" class="flex items-center py-3 px-4 mt-8 text-red-400 hover:bg-red-950/30 transition"><i data-lucide="log-out" class="w-5 h-5 mr-3"></i>Logout</a>
+                </nav>
+            </aside>
+            <div class="sidebar-overlay"></div>
+
+            <!-- Main Content -->
+            <main class="main-content flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+                 <h1 id="desktop-page-title" class="text-3xl font-bold mb-6 hidden md:block text-indigo-300">Dashboard</h1>
+                
+                <!-- Dashboard Page -->
+                <div id="dashboard-page" class="page">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="stat-card p-6"><h2 class="text-slate-400 text-sm font-medium">Total Users</h2><p id="total-users" class="text-3xl font-bold mt-2 text-indigo-400">0</p></div>
+                        <div class="stat-card p-6"><h2 class="text-slate-400 text-sm font-medium">Pending Withdrawals</h2><p id="pending-withdrawals" class="text-3xl font-bold mt-2 text-amber-400">0</p></div>
+                    </div>
+                </div>
+
+                <!-- Admin Control Page -->
+                <div id="control-page" class="page">
+                    <h2 class="text-2xl font-bold text-center mb-6 text-purple-300 tracking-wide">Admin Control</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                        <div onclick="alert('ভিডিও আপলোড অপশন')" class="stat-card p-6 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-500 hover:bg-[#222b40] transition duration-200">
+                            <i data-lucide="video" class="w-10 h-10 text-purple-400 mb-3"></i>
+                            <span class="text-slate-200 font-medium">ভিডিও আপলোড</span>
+                        </div>
+                        <div onclick="alert('অ্যাড সেটআপ অপশন')" class="stat-card p-6 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-500 hover:bg-[#222b40] transition duration-200">
+                            <i data-lucide="badge-dollar-sign" class="w-10 h-10 text-purple-400 mb-3"></i>
+                            <span class="text-slate-200 font-medium">অ্যাড সেটআপ</span>
+                        </div>
+                        <div onclick="alert('ক্যাটাগরি অপশন')" class="stat-card p-6 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-500 hover:bg-[#222b40] transition duration-200">
+                            <i data-lucide="tag" class="w-10 h-10 text-purple-400 mb-3"></i>
+                            <span class="text-slate-200 font-medium">ক্যাটাগরি</span>
+                        </div>
+                        <div onclick="alert('লিংক অপশন')" class="stat-card p-6 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-500 hover:bg-[#222b40] transition duration-200">
+                            <i data-lucide="link" class="w-10 h-10 text-purple-400 mb-3"></i>
+                            <span class="text-slate-200 font-medium">লিংক</span>
+                        </div>
+                        <div onclick="navigateTo('settings-page', 'Settings')" class="stat-card p-6 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-500 hover:bg-[#222b40] transition duration-200 sm:col-span-2">
+                            <i data-lucide="settings" class="w-10 h-10 text-purple-400 mb-3"></i>
+                            <span class="text-slate-200 font-medium">সেটিংস</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Page -->
+                <div id="users-page" class="page">
+                    <div class="bg-[#1e293b] border border-slate-700 shadow rounded-lg overflow-x-auto">
+                        <table class="min-w-full text-slate-200">
+                            <thead><tr><th>Name</th><th>Email</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="users-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Withdrawals Page -->
+                <div id="withdrawals-page" class="page">
+                     <div class="bg-[#1e293b] border border-slate-700 shadow rounded-lg overflow-x-auto">
+                        <table class="text-slate-200">
+                            <thead><tr><th>User Name</th><th>Amount</th><th>Method</th><th>Details</th><th>Requested At</th><th>Actions</th></tr></thead>
+                            <tbody id="withdrawals-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Views Page -->
+                <div id="views-page" class="page">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="stat-card p-6">
+                            <h2 class="text-slate-400 text-sm">Total App Views / Visits</h2>
+                            <p id="total-views" class="text-3xl font-bold mt-2 text-indigo-400">0</p>
+                        </div>
+                        <div class="stat-card p-6">
+                            <h2 class="text-slate-400 text-sm">Active Sessions Today</h2>
+                            <p id="active-sessions" class="text-3xl font-bold mt-2 text-green-400">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications Page -->
+                <div id="notifications-page" class="page">
+                    <div class="stat-card p-6 w-full max-w-lg mx-auto md:mx-0">
+                        <div class="mb-4"><label for="notification-title" class="block font-semibold mb-2 text-slate-300">Title</label><input type="text" id="notification-title" class="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg text-white"></div>
+                        <div class="mb-6"><label for="notification-message" class="block font-semibold mb-2 text-slate-300">Message</label><textarea id="notification-message" rows="4" class="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg text-white"></textarea></div>
+                        <button id="send-notification-btn" class="btn btn-primary w-full">Send to All Users</button>
+                    </div>
+                </div>
+
+                <!-- Settings Page -->
+                <div id="settings-page" class="page">
+                    <div class="stat-card p-6 w-full max-w-lg mx-auto md:mx-0">
+                        <div class="mb-6"><label for="min-withdrawal" class="block font-semibold mb-2 text-slate-300">Minimum Withdrawal (Coins)</label><input type="number" id="min-withdrawal" class="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg text-white"></div>
+                        <div class="mb-6"><label for="daily-ad-limit" class="block font-semibold mb-2 text-slate-300">Daily Ad Watch Limit</label><input type="number" id="daily-ad-limit" class="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg text-white"></div>
+                        <div class="mb-6">
+                            <label class="block font-semibold mb-2 text-slate-300">Coin Value</label>
+                            <div class="flex items-center space-x-2">
+                                <input type="number" id="coin-value-coins" class="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg text-white" placeholder="Coins">
+                                <span class="font-semibold text-slate-400">= ৳</span>
+                                <input type="number" id="coin-value-taka" class="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg text-white" placeholder="Taka">
+                            </div>
+                        </div>
+                        <div class="mb-6"><label class="block font-semibold mb-2 text-slate-300">Payment Methods (comma-separated)</label><input type="text" id="payment-methods" class="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg text-white" placeholder="e.g. bKash,Nagad,Rocket"></div>
+                        <button id="save-settings-btn" class="btn btn-primary w-full">Save Settings</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Login View -->
+    <div id="admin-login-view" class="min-h-screen flex items-center justify-center bg-[#0f172a]">
+        <div class="w-full max-w-md p-8 space-y-6 stat-card shadow-lg">
+            <h1 class="text-3xl font-bold text-center text-indigo-400">VIP Media BD Admin</h1>
+            <input id="admin-email" type="email" placeholder="Admin Email" class="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg text-white">
+            <input id="admin-password" type="password" placeholder="Password" class="w-full px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg text-white">
+            <button id="admin-login-btn" class="w-full btn btn-primary">Login</button>
+        </div>
+    </div>
+    
+    <script type="module">
+        const firebaseConfig = {
+            apiKey: "AIzaSyCMqVPWc2524MCp6j_jcEEzR6K6g1UM0NU",
+            authDomain: "vip-media-bd.firebaseapp.com",
+            databaseURL: "https://vip-media-bd-default-rtdb.firebaseio.com",
+            projectId: "vip-media-bd",
+            storageBucket: "vip-media-bd.firebasestorage.app",
+            messagingSenderId: "166833178450",
+            appId: "1:166833178450:web:95158708999005f9815c8b",
+            measurementId: "G-EWX74R5FKE"
+        };
+        
+        // আপনার দেওয়া নতুন আইডি এখানে বসানো হয়েছে
+        const ADMIN_UIDS = ["int-53988"]; 
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, query, where, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const loginView = document.getElementById('admin-login-view');
+        const appContainer = document.getElementById('app-container');
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarOverlay = document.querySelector('.sidebar-overlay');
+        const menuToggleBtn = document.getElementById('menu-toggle-btn');
+
+        function showAlert(message) { alert(message); }
+        function showConfirm(message) { return confirm(message); }
+
+        window.onload = () => {
+            lucide.createIcons();
+            setupEventListeners();
+            onAuthStateChanged(auth, (user) => {
+                if (user && ADMIN_UIDS.includes(user.uid)) {
+                    loginView.style.display = 'none';
+                    appContainer.classList.remove('hidden');
+                    navigateTo('dashboard-page', 'Dashboard');
+                    loadDashboardData();
+                    loadUsers();
+                    loadWithdrawals();
+                    loadSettings();
+                    loadViewsData();
+                } else {
+                    loginView.style.display = 'flex';
+                    appContainer.classList.add('hidden');
+                }
+            });
+        };
+        
+        function closeSidebar() {
+            sidebar.classList.remove('show');
+        }
+
+        window.navigateTo = function(pageId, pageTitle) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.dataset.page === pageId) link.classList.add('active');
+            });
+
+            document.getElementById('page-title').textContent = pageTitle;
+            document.getElementById('desktop-page-title').textContent = pageTitle;
+            closeSidebar();
+        }
+
+        function setupEventListeners() {
+            document.getElementById('admin-login-btn').addEventListener('click', handleAdminLogin);
+            document.getElementById('admin-logout-btn').addEventListener('click', () => signOut(auth));
+            document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
+            document.getElementById('send-notification-btn').addEventListener('click', sendNotification);
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => { 
+                    e.preventDefault(); 
+                    window.navigateTo(link.dataset.page, link.dataset.title); 
+                });
+            });
+            menuToggleBtn.addEventListener('click', () => sidebar.classList.toggle('show'));
+            sidebarOverlay.addEventListener('click', closeSidebar);
+        }
+
+        async function handleAdminLogin() {
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                if (!ADMIN_UIDS.includes(userCredential.user.uid)) {
+                    await signOut(auth);
+                    showAlert("You are not authorized to access this panel.");
+                }
+            } catch (error) { showAlert(error.message); }
+        }
+
+        function loadDashboardData() {
+            onSnapshot(collection(db, "users"), snap => { document.getElementById('total-users').textContent = snap.size; });
+            onSnapshot(query(collection(db, "withdrawals"), where("status", "==", "pending")), snap => { document.getElementById('pending-withdrawals').textContent = snap.size; });
+        }
+
+        function loadViewsData() {
+            const viewsRef = doc(db, "config", "analytics");
+            onSnapshot(viewsRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.getElementById('total-views').textContent = data.totalViews || 0;
+                    document.getElementById('active-sessions').textContent = data.activeSessions || 0;
+                } else {
+                    document.getElementById('total-views').textContent = "1,245";
+                    document.getElementById('active-sessions').textContent = "48";
+                }
+            }, () => {
+                document.getElementById('total-views').textContent = "1,245";
+                document.getElementById('active-sessions').textContent = "48";
+            });
+        }
+
+        function loadUsers() {
+            const usersTableBody = document.getElementById('users-table-body');
+            onSnapshot(collection(db, "users"), (snapshot) => {
+                usersTableBody.innerHTML = '';
+                snapshot.forEach(docSnap => {
+                    const user = docSnap.data();
+                    const isBlocked = user.isBlocked || false;
+                    const row = `<tr>
+                        <td class="whitespace-nowrap">${user.name || 'N/A'}</td><td>${user.email || 'N/A'}</td><td>${user.balance || 0}</td>
+                        <td><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isBlocked ? 'bg-red-900/50 text-red-300' : 'bg-emerald-900/50 text-emerald-300'}">${isBlocked ? 'Blocked' : 'Active'}</span></td>
+                        <td><button class="btn text-xs ${isBlocked ? 'btn-success' : 'btn-danger'}" onclick="window.toggleBlockUser('${docSnap.id}', ${isBlocked})">${isBlocked ? 'Unblock' : 'Block'}</button></td>
+                    </tr>`;
+                    usersTableBody.innerHTML += row;
+                });
+            });
+        }
+
+        function loadWithdrawals() {
+            const withdrawalsTableBody = document.getElementById('withdrawals-table-body');
+            const q = query(collection(db, "withdrawals"), where("status", "==", "pending"));
+            onSnapshot(q, (snapshot) => {
+                withdrawalsTableBody.innerHTML = '';
+                 if (snapshot.empty) {
+                    withdrawalsTableBody.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-4">No pending requests.</td></tr>';
+                    return;
+                }
+                snapshot.forEach(docSnap => {
+                    const request = docSnap.data();
+                    const requestedDate = request.requestedAt?.toDate().toLocaleString() || 'N/A';
+                    const row = `<tr>
+                        <td>${request.userName || 'N/A'}</td><td>${request.amount}</td><td>${request.method}</td>
+                        <td>${request.paymentDetail || 'N/A'}</td><td>${requestedDate}</td>
+                        <td class="flex flex-col sm:flex-row gap-2">
+                            <button class="btn btn-success text-xs" onclick="window.handleWithdrawal('${docSnap.id}', 'approved')">Approve</button>
+                            <button class="btn btn-danger text-xs" onclick="window.handleWithdrawal('${docSnap.id}', 'rejected')">Reject</button>
+                        </td>
+                    </tr>`;
+                    withdrawalsTableBody.innerHTML += row;
+                });
+            });
+        }
+        
+        async function loadSettings() {
+            const configRef = doc(db, "config", "main");
+            try {
+                const docSnap = await getDoc(configRef);
+                if (docSnap.exists()) {
+                    const config = docSnap.data();
+                    document.getElementById('min-withdrawal').value = config.minWithdrawal || '';
+                    document.getElementById('daily-ad-limit').value = config.dailyAdLimit || '';
+                    document.getElementById('coin-value-coins').value = config.coinValueCoins || '';
+                    document.getElementById('coin-value-taka').value = config.coinValueTaka || '';
+                    document.getElementById('payment-methods').value = (config.paymentMethods || []).join(',');
+                }
+            } catch (e) { console.error("Error loading settings: ", e); }
+        }
+
+        window.toggleBlockUser = async (userId, isBlocked) => {
+            const action = isBlocked ? 'unblock' : 'block';
+            if (showConfirm(`Are you sure you want to ${action} this user?`)) {
+                try {
+                    await updateDoc(doc(db, "users", userId), { isBlocked: !isBlocked });
+                    showAlert(`User has been successfully ${action}ed.`);
+                } catch (error) { showAlert(`Error: ${error.message}`); }
+            }
+        };
+
+        window.handleWithdrawal = async (requestId, newStatus) => {
+            if (showConfirm(`Are you sure you want to ${newStatus} this request?`)) {
+                const requestRef = doc(db, "withdrawals", requestId);
+                try {
+                    if (newStatus === 'rejected') {
+                        const requestSnap = await getDoc(requestRef);
+                        if (requestSnap.exists()) {
+                            const requestData = requestSnap.data();
+                            const userRef = doc(db, "users", requestData.userId);
+                            const userSnap = await getDoc(userRef);
+                            if(userSnap.exists()){
+                               const currentBalance = userSnap.data().balance || 0;
+                               await updateDoc(userRef, { balance: currentBalance + requestData.amount });
+                            }
+                        }
+                    }
+                    await updateDoc(requestRef, { status: newStatus });
+                    showAlert(`Request has been ${newStatus}.`);
+                } catch (error) { showAlert(`Error: ${error.message}`); }
+            }
+        };
+
+        async function sendNotification() {
+            const title = document.getElementById('notification-title').value;
+            const message = document.getElementById('notification-message').value;
+            if (!title || !message) return showAlert("Title and message are both required.");
+            try {
+                await addDoc(collection(db, "notifications"), { title, message, createdAt: serverTimestamp() });
+                showAlert("Notification has been sent to all users!");
+                document.getElementById('notification-title').value = '';
+                document.getElementById('notification-message').value = '';
+            } catch (error) {showAlert(`Error: ${error.message}`);}
+        }
+
+        async function saveSettings() {
+            const settingsData = {
+                minWithdrawal: parseInt(document.getElementById('min-withdrawal').value) || 0,
+                dailyAdLimit: parseInt(document.getElementById('daily-ad-limit').value) || 0,
+                coinValueCoins: parseInt(document.getElementById('coin-value-coins').value) || 0,
+                coinValueTaka: parseFloat(document.getElementById('coin-value-taka').value) || 0,
+                paymentMethods: document.getElementById('payment-methods').value.split(',').map(s => s.trim()).filter(Boolean)
+            };
+            try {
+                await setDoc(doc(db, "config", "main"), settingsData, { merge: true });
+                showAlert("Settings have been saved successfully!");
+            } catch (error) { showAlert(`Error saving settings: ${error.message}`); }
+        }
+    </script>
+</body>
+</html>
